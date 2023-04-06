@@ -88,48 +88,28 @@ func SPOT(egofile string) {
 			if string(line[i:i+3]) == "<e>" {
 				parent = nil
 				if len(parent_buffer) >= 1 {
-					fmt.Println("NOPROP all buffer when buffer >= 1", parent_buffer)
 					parent = parent_buffer[len(parent_buffer)-1]
-					fmt.Println("parent when buffer is >= 1", parent_buffer[len(parent_buffer)-1])
 				}
 				new_element := NewElement("std", "", parent, child_buffer, "")
-				fmt.Println("new without properties:", new_element, ": parent ->", &new_element.PARENT, ": child ->", len(new_element.CHILD))
 				parent_buffer = append(parent_buffer, new_element)
-				fmt.Println("parent buffer when new: ", parent_buffer)
-				//fmt.Println("from <e> element added:", parent_buffer)
 				if i >= len(line)-3 {
 					continue
 				}
 				i += 2
 			}
 			if string(line[i:i+3]) == "</>" {
-				// TODO rewrite so it traverse entire tree only on the last </>
-				// fmt.Println("</>")
 				if len(parent_buffer) == 0 {
-					fmt.Println(">>>>> length of the buffer:", len(parent_buffer))
 					continue
-				} else {
-					for len(parent_buffer) != 0 {
-						if len(parent_buffer) == 1 {
-							fmt.Println(">>>>> length of the buffer:", len(parent_buffer))
-							parent_buffer[0].ChangeParent(page)
-							tree_buffer = append(tree_buffer, parent_buffer[0])
-							fmt.Println("tree buffer updated: ", tree_buffer)
-							parent_buffer = nil
-							fmt.Println("when tree updated, new buffer is ->", parent_buffer)
-						} else if len(parent_buffer) >= 2 {
-							//fmt.Println("</> and buffer 2 or more")
-							fmt.Println(">>>>> length of the buffer:", len(parent_buffer))
-							parent_buffer[len(parent_buffer)-1].ChangeParent(parent_buffer[len(parent_buffer)-2])
-							//fmt.Println("changed parent on:", parent_buffer[len(parent_buffer)-2])
-							parent_buffer[len(parent_buffer)-2].AppendChild(parent_buffer[len(parent_buffer)-1])
-							//fmt.Println("appended child from:", parent_buffer[len(parent_buffer)-1])
-							parent_buffer = parent_buffer[:len(parent_buffer)-1]
-							fmt.Println("new parent when removed:", parent_buffer)
-							fmt.Println(">>>>> length of the buffer:", len(parent_buffer))
-							fmt.Println("tree buffer updated when removing parent buffer:", tree_buffer)
-						}
-					}
+				}
+				if len(parent_buffer) == 1 {
+					parent_buffer[0].ChangeParent(page)
+					tree_buffer = append(tree_buffer, parent_buffer[0])
+					parent_buffer = nil
+				}
+				if len(parent_buffer) >= 2 {
+					parent_buffer[len(parent_buffer)-1].ChangeParent(parent_buffer[len(parent_buffer)-2])
+					parent_buffer[len(parent_buffer)-2].AppendChild(parent_buffer[len(parent_buffer)-1])
+					parent_buffer = parent_buffer[:len(parent_buffer)-1]
 				}
 				if i >= len(line)-3 {
 					continue
@@ -189,18 +169,24 @@ func SPOT(egofile string) {
 				if len(charbuf_id) == 0 {
 					charbuf_id = []byte("std")
 				}
-				//fmt.Println(string(charbuf_id), string(charbuf_class), string(charbuf_ref))
-				fmt.Println("parent buffer before new with properties:", parent_buffer)
 				if len(parent_buffer) >= 1 {
-					fmt.Println("PROP all buffer when buffer >= 1", parent_buffer)
 					parent = parent_buffer[len(parent_buffer)-1]
-					fmt.Println("parent when buffer is >= 1", parent_buffer[len(parent_buffer)-1])
 				}
 				new_element := NewElement(string(charbuf_id), string(charbuf_class), parent, child_buffer, string(charbuf_ref))
-				fmt.Println("new with properties:", new_element, ": parent ->", &new_element.PARENT, ": child ->", new_element.CHILD)
 				parent_buffer = append(parent_buffer, new_element)
-				fmt.Println("parent when with properties:", parent_buffer)
 			}
+		}
+	}
+	for len(parent_buffer) > 0 {
+		if len(parent_buffer) == 1 {
+			parent_buffer[0].ChangeParent(page)
+			tree_buffer = append(tree_buffer, parent_buffer[0])
+			parent_buffer = nil
+		}
+		if len(parent_buffer) >= 2 {
+			parent_buffer[len(parent_buffer)-1].ChangeParent(parent_buffer[len(parent_buffer)-2])
+			parent_buffer[len(parent_buffer)-2].AppendChild(parent_buffer[len(parent_buffer)-1])
+			parent_buffer = parent_buffer[:len(parent_buffer)-1]
 		}
 	}
 	fmt.Println("length of tree buffer:", len(tree_buffer))

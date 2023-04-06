@@ -9,5 +9,6 @@
     <e cls="twice">Yet Another
         <e ref="youtube.com">New</>
     </>
-    <e>And even more nested<e> in one row </>
+    <e>And even more nested<e> in one row </></>
 </>
+<e id="flawless">Another top-level</>
