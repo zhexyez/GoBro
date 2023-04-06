@@ -1,11 +1,13 @@
 <e>This is some element</>
-<!-- This element connects CSS file -->
+### This is comment
+### This element connects CSS file
 <s ref="style.css"/>
-<!-- This element connects Go file to execute scripts on POT (Page Object Tree) -->
+### This element connects Go file to execute scripts on POT (Page Object Tree)
 <x ref="executable.go"/>
 <e>Nested elements
-    <e>Another element</>
+    <e id="button" cls="nice">Another element</>
     <e>Yet Another
-        <e>New</>
+        <e ref="youtube.com">New</>
     </>
+    <e>And even more nested<e> in one row </>
 </>
