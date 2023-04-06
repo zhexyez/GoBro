@@ -6,7 +6,7 @@
 <x ref="executable.go"/>
 <e>Nested elements
     <e id="button" cls="nice">Another element</>
-    <e>Yet Another
+    <e cls="twice">Yet Another
         <e ref="youtube.com">New</>
     </>
     <e>And even more nested<e> in one row </>
