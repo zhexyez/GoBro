@@ -1,0 +1,9 @@
+<e>This is some element</>
+<s ref="style.css"/> // This element connects CSS file
+<x ref="executable.go"/> // This element connects Go file to execute scripts on POT (Page Object Tree)
+<e>Nested elements
+    <e>Another element</>
+    <e>Yet Another
+        <e>New</>
+    </>
+</>
