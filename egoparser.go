@@ -19,25 +19,25 @@ import (
 	9: 32,  // \x20 (space)
 }*/
 
-func ParsEGO(egofile string) {
+func SPOT(egofile string) {
 	ego, err := os.Open(egofile)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer ego.Close()
 
+	page := NewPage()
+
 	scanner := bufio.NewScanner(ego)
 	scanner.Bytes()
-	lnnum := 1
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
 			log.Fatal(err)
 			return
 		}
-		fmt.Println("LINE NUMBER:", lnnum)
+		var parent_buffer []*element
 		line := scanner.Text()
 		if len(line) <= 2 {
-			lnnum++ // line cannot be less than 3 characters in size
 			continue
 		}
 		for i := range line {
@@ -46,41 +46,118 @@ func ParsEGO(egofile string) {
 			}
 			if string(line[i:i+3]) == "###" {
 				// comment is one-liner
-				fmt.Println("Found comment line")
 				continue
 			}
 			if string(line[i:i+3]) == "<s\x20" {
 				// style inclusion is one-liner
-				fmt.Println("Found style inclusion")
+				if string(line[i+3:i+6]) == "ref" {
+					if string(line[i+7]) == "\"" {
+						charbuf := []byte{}
+						for j := 8; string(line[j]) != "\""; j++ {
+							charbuf = append(charbuf, line[j])
+						}
+						style := NewStyle(string(charbuf))
+						page.AppendStyle(style)
+					}
+				}
 				continue
 			}
 			if string(line[i:i+3]) == "<x\x20" {
 				// xcutable inclusion is one-liner
-				fmt.Println("Found xcutable inclusion")
+				if string(line[i+3:i+6]) == "ref" {
+					if string(line[i+7]) == "\"" {
+						charbuf := []byte{}
+						for j := 8; string(line[j]) != "\""; j++ {
+							charbuf = append(charbuf, line[j])
+						}
+						x := NewX(string(charbuf))
+						page.AppendX(x)
+					}
+				}
 				continue
 			}
 			if string(line[i:i+3]) == "<e>" {
-				fmt.Println("Found <e>", string(line[i:i+3]))
 				if i >= len(line)-3 {
 					continue
 				}
+				new_element := NewElement(string([]byte{}), string([]byte{}), nil, nil, string([]byte{}))
+				parent_buffer = append(parent_buffer, new_element)
 				i += 2
 			}
 			if string(line[i:i+3]) == "</>" {
-				fmt.Println("Found </>", string(line[i:i+3]))
-				if i >= len(line)-3 {
+				if i >= len(line)-3 || len(parent_buffer) == 0 {
 					continue
+				}
+				if len(parent_buffer) == 1 {
+					parent_buffer[0].ChangeParent(page)
+					//fmt.Println(string(MakeTree_inJSON(parent_buffer[0])))
+					fmt.Println(string(MakeTree_inJSON(parent_buffer[0])))
+					parent_buffer = nil
+				} else {
+					parent_buffer[len(parent_buffer)-1].ChangeParent(parent_buffer[len(parent_buffer)-2])
+					parent_buffer[len(parent_buffer)-2].AppendChild(parent_buffer[len(parent_buffer)-1])
+					parent_buffer = parent_buffer[:len(parent_buffer)-1]
+					fmt.Println(parent_buffer)
 				}
 				i += 2
 			}
 			if string(line[i:i+3]) == "<e\x20" {
-				fmt.Println("Found element with details", string(line[i:i+3]))
 				if i >= len(line)-3 {
 					continue
 				}
-				i += 2
+				i += 3
+				var charbuf_id, charbuf_class, charbuf_ref []byte
+				for string(line[i]) != ">" {
+					if string(line[i:i+2]) == "id" {
+						if string(line[i+3]) == "\"" {
+							i += 4
+							for ; string(line[i]) != "\""; i++ {
+								charbuf_id = append(charbuf_id, line[i])
+							}
+							i++
+						}
+						if string(line[i]) == ">" {
+							continue
+						} else {
+							i++
+						}
+					}
+					if string(line[i:i+3]) == "cls" {
+						if string(line[i+4]) == "\"" {
+							i += 5
+							for ; string(line[i]) != "\""; i++ {
+								charbuf_class = append(charbuf_class, line[i])
+							}
+							i++
+						}
+						if string(line[i]) == ">" {
+							continue
+						} else {
+							i++
+						}
+					}
+					if string(line[i:i+3]) == "ref" {
+						if string(line[i+4]) == "\"" {
+							i += 5
+							for ; string(line[i]) != "\""; i++ {
+								charbuf_ref = append(charbuf_ref, line[i])
+							}
+							i++
+						}
+						if string(line[i]) == ">" {
+							continue
+						} else {
+							i++
+						}
+					}
+				}
+				//fmt.Println(string(charbuf_id), string(charbuf_class), string(charbuf_ref))
+				new_element := NewElement(string(charbuf_id), string(charbuf_class), nil, nil, string(charbuf_ref))
+				//fmt.Println(new_element)
+				parent_buffer = append(parent_buffer, new_element)
+				//fmt.Println(parent_buffer)
 			}
 		}
-		lnnum++
 	}
+	//fmt.Println(string(MakeTree_inJSON(page)))
 }

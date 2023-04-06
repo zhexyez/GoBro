@@ -31,5 +31,5 @@ func main() {
 	fmt.Println("element>", elem)
 	fmt.Println("element2>", elem2)
 	fmt.Println("element3>", elem3) */
-	ParsEGO("testpage.ego")
+	SPOT("testpage.ego")
 }

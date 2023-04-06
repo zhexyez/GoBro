@@ -16,11 +16,21 @@ type parent interface {
 }
 
 type page struct {
-	// Dummy struct to link the top-level element
+	// Root element in the tree
+	STYLES    []*style
+	XCUTABLES []*xcutable
 }
 
 func (p *page) method() {
 	// Dummy method to link page and element structs via interface
+}
+
+func (p *page) AppendStyle(s *style) {
+	p.STYLES = append(p.STYLES, s)
+}
+
+func (p *page) AppendX(x *xcutable) {
+	p.XCUTABLES = append(p.XCUTABLES, x)
 }
 
 func NewPage() *page {
@@ -37,7 +47,7 @@ func NewStyle(ref string) *style {
 	return &style{REF: ref}
 }
 
-func ChangeStyle(s *style, ref string) {
+func (s *style) ChangeStyle(ref string) {
 	s.REF = ref
 }
 
@@ -54,7 +64,7 @@ func NewX(ref string) *xcutable {
 	return &xcutable{REF: ref}
 }
 
-func ChangeX(x *xcutable, ref string) {
+func (x *xcutable) ChangeX(ref string) {
 	x.REF = ref
 }
 
@@ -96,7 +106,7 @@ func (e *element) ChangeClass(class string) {
 	e.CLS = class
 }
 
-func (e *element) ChangeParent(parent *element) {
+func (e *element) ChangeParent(parent parent) {
 	e.PARENT = parent
 }
 
@@ -164,7 +174,7 @@ func NewElement(id string, class string, parent parent, child []*element, ref st
 	return &element{ID: id, CLS: class, PARENT: parent, CHILD: child, REF: ref}
 }
 
-func MakeTree_inJSON(element *element) []byte {
+func MakeTree_inJSON(element parent) []byte {
 	// Can be used for visual representation
 	tree, err := json.Marshal(element)
 	if err != nil {
