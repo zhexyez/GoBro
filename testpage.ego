@@ -5,10 +5,18 @@
 ### This element connects Go file to execute scripts on POT (Page Object Tree)
 <x ref="executable.go"/>
 <e>Nested elements
-    <e id="button" cls="nice">Another element</>
-    <e cls="twice">Yet Another
+    <e id="button" class="nice">Another element</>
+    <e class="twice">Yet Another
         <e ref="youtube.com">New</>
     </>
     <e>And even more nested<e> in one row </></>
 </>
 <e id="flawless">Another top-level</>
+<e id="garry">loop<e id="garry2">loop2<e id="garry3">loop3</></></>
+<e class="begging">
+    <e class="you">
+        <e class="Iwanttobeyour">
+            <e ref="babyhowlucky">Rasta</>
+        </>
+    </>
+</>

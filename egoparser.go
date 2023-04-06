@@ -137,9 +137,9 @@ func SPOT(egofile string) {
 							i++
 						}
 					}
-					if string(line[i:i+3]) == "cls" {
-						if string(line[i+4]) == "\"" {
-							i += 5
+					if string(line[i:i+5]) == "class" {
+						if string(line[i+6]) == "\"" {
+							i += 7
 							for ; string(line[i]) != "\""; i++ {
 								charbuf_class = append(charbuf_class, line[i])
 							}
