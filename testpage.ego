@@ -1,6 +1,8 @@
 <e>This is some element</>
-<s ref="style.css"/> // This element connects CSS file
-<x ref="executable.go"/> // This element connects Go file to execute scripts on POT (Page Object Tree)
+<!-- This element connects CSS file -->
+<s ref="style.css"/>
+<!-- This element connects Go file to execute scripts on POT (Page Object Tree) -->
+<x ref="executable.go"/>
 <e>Nested elements
     <e>Another element</>
     <e>Yet Another
