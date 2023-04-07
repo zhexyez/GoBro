@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"time"
+)
+
 func main() {
 	// test #1
 	/*fmt.Println("to be >")
@@ -31,5 +36,10 @@ func main() {
 	fmt.Println("element>", elem)
 	fmt.Println("element2>", elem2)
 	fmt.Println("element3>", elem3) */
-	SPOT("testpage.ego")
+
+	i := time.Now()
+	page, tree := SPOT("testpage.ego")
+	fmt.Println("Spawned in", time.Since(i).Microseconds(), "microseconds")
+	PrintPOT(page, tree)
+
 }
