@@ -42,11 +42,18 @@ var Patterns map[string]string = map[string]string{
 	"comment":    keychars[35] + keychars[35] + keychars[35],
 }
 
-func SPOT(egofile string) (*page, []*element) {
+type POTError struct {
+	TXT string
+}
+
+func (e *POTError) Error() string {
+	return e.TXT
+}
+
+func SPOT(egofile string) (*page, []*element, *POTError) {
 	ego, err := os.Open(egofile)
 	if err != nil {
-		log.Fatalln(err)
-		return nil, nil
+		return nil, nil, &POTError{TXT: "Unable to open the file. Possible error:" + err.Error()}
 	}
 	defer ego.Close()
 
@@ -55,39 +62,33 @@ func SPOT(egofile string) (*page, []*element) {
 	var child_buffer, tree_buffer, parent_buffer []*element
 	var txt_buffer [][]byte
 
+	var EOL bool = false
+
 	scanner := bufio.NewScanner(ego)
 	scanner.Bytes()
 
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
-			log.Fatal(err)
-			return nil, nil
+			return nil, nil, &POTError{TXT: "Unable to scan the file. Possible error:" + err.Error()}
 		}
 
 		line := scanner.Text()
 
 		zeros_counter := 0
-
 		for ; int(zeros_counter) < len(line); zeros_counter++ {
 			if line[zeros_counter] != 32 && line[zeros_counter] != 9 {
 				break
 			}
 		}
-
 		if zeros_counter > 0 {
 			line = line[zeros_counter:]
 		}
-
-		//fmt.Println(line)
-		//fmt.Println([]byte(line))
 
 		if len(line) <= 2 {
 			continue
 		}
 
 		for i := 0; i < len(line); {
-			//fmt.Println("current i:", i)
-			//fmt.Println("line len :", len(line))
 			if i < len(line)-2 {
 				if line[i:i+3] == Patterns["comment"] {
 					// comment is one-liner
@@ -155,13 +156,14 @@ func SPOT(egofile string) (*page, []*element) {
 						break
 					}
 					i += 3
+					continue
 				}
 				if line[i:i+3] == Patterns["elementWiP"] {
 					// something seems not right. can make it more compact
-					parent = page
 					if i >= len(line)-3 {
 						break
 					}
+					parent = page
 					i += 3
 					var charbuf_id, charbuf_class, charbuf_ref []byte
 					for string(line[i]) != Patterns["propEND"] {
@@ -175,6 +177,7 @@ func SPOT(egofile string) (*page, []*element) {
 							}
 							if string(line[i]) == Patterns["propEND"] {
 								if i == len(line)-1 {
+									EOL = true
 									break
 								} else {
 									i++
@@ -194,6 +197,7 @@ func SPOT(egofile string) (*page, []*element) {
 							}
 							if string(line[i]) == Patterns["propEND"] {
 								if i == len(line)-1 {
+									EOL = true
 									break
 								} else {
 									i++
@@ -213,6 +217,7 @@ func SPOT(egofile string) (*page, []*element) {
 							}
 							if string(line[i]) == Patterns["propEND"] {
 								if i == len(line)-1 {
+									EOL = true
 									break
 								} else {
 									i++
@@ -240,6 +245,10 @@ func SPOT(egofile string) (*page, []*element) {
 			if len(txt_buffer) == 0 {
 				txt_buffer = append(txt_buffer, []byte{})
 			}
+			if EOL {
+				EOL = false
+				break
+			}
 			txt_buffer[len(txt_buffer)-1] = append(txt_buffer[len(txt_buffer)-1], line[i])
 			i++
 		}
@@ -264,10 +273,10 @@ func SPOT(egofile string) (*page, []*element) {
 		}
 	}
 	if page != nil {
-		return page, tree_buffer
+		return page, tree_buffer, nil
 	}
 	log.Fatal("Page does not exist")
-	return nil, nil
+	return nil, nil, &POTError{TXT: "Page does not exist!"}
 }
 
 func PrintPOT(page parent, tree []*element) {

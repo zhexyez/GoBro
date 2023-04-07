@@ -38,8 +38,10 @@ func main() {
 	fmt.Println("element3>", elem3) */
 
 	i := time.Now()
-	page, tree := SPOT("testpage.ego")
+	page, tree, err := SPOT("testpage.ego")
+	if err != nil {
+		fmt.Print(err.Error())
+	}
 	fmt.Println("Spawned in", time.Since(i).Nanoseconds(), "nanoseconds")
 	PrintPOT(page, tree)
-
 }
