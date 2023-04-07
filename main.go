@@ -39,7 +39,7 @@ func main() {
 
 	i := time.Now()
 	page, tree := SPOT("testpage.ego")
-	fmt.Println("Spawned in", time.Since(i).Microseconds(), "microseconds")
+	fmt.Println("Spawned in", time.Since(i).Nanoseconds(), "nanoseconds")
 	PrintPOT(page, tree)
 
 }

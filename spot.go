@@ -1,185 +1,279 @@
 package main
 
 import (
-	"encoding/json"
+	"bufio"
+	"fmt"
 	"log"
-	"runtime"
+	"os"
 )
 
-/*  This file contains interface to interact with
-POT (Page Object Tree). TODO: TL;DR
-*/
-
-type parent interface {
-	// Dummy interface to link page and element structs via interface
-	method()
+var keychars map[byte]string = map[byte]string{
+	60:  "<",
+	62:  ">",
+	47:  "/",
+	34:  "\"",
+	61:  "=",
+	101: "e",
+	120: "x",
+	115: "s",
+	114: "r",
+	102: "f",
+	105: "i",
+	100: "d",
+	99:  "c",
+	108: "l",
+	97:  "a",
+	32:  "\x20",
+	35:  "#",
+	9:   "\x09",
 }
 
-type page struct {
-	// Root element in the tree
-	STYLES    []*style
-	XCUTABLES []*xcutable
+var Patterns map[string]string = map[string]string{
+	"style":      keychars[60] + keychars[115] + keychars[32],
+	"xcutable":   keychars[60] + keychars[120] + keychars[32],
+	"elementNoP": keychars[60] + keychars[101] + keychars[62],
+	"elementWiP": keychars[60] + keychars[101] + keychars[32],
+	"elementCLS": keychars[60] + keychars[47] + keychars[62],
+	"quotation":  keychars[34],
+	"propEND":    keychars[62],
+	"ref":        keychars[114] + keychars[101] + keychars[102],
+	"id":         keychars[105] + keychars[100],
+	"class":      keychars[99] + keychars[108] + keychars[97] + keychars[115] + keychars[115],
+	"comment":    keychars[35] + keychars[35] + keychars[35],
 }
 
-func (p *page) method() {
-	// Dummy method to link page and element structs via interface
-}
-
-func (p *page) AppendStyle(s *style) {
-	p.STYLES = append(p.STYLES, s)
-}
-
-func (p *page) AppendX(x *xcutable) {
-	p.XCUTABLES = append(p.XCUTABLES, x)
-}
-
-func NewPage() *page {
-	// Returns pointer to a new page struct
-	return &page{}
-}
-
-type style struct {
-	REF string
-}
-
-func NewStyle(ref string) *style {
-	// Returns pointer to a new style struct
-	return &style{REF: ref}
-}
-
-func (s *style) ChangeStyle(ref string) {
-	s.REF = ref
-}
-
-func FlushStyle(s *style) *style {
-	return nil
-}
-
-type xcutable struct {
-	REF string
-}
-
-func NewX(ref string) *xcutable {
-	// Returns pointer to a new xcutable struct
-	return &xcutable{REF: ref}
-}
-
-func (x *xcutable) ChangeX(ref string) {
-	x.REF = ref
-}
-
-func FlushX(x *xcutable) *xcutable {
-	return nil
-}
-
-type element struct {
-	// An element definition.
-	//
-	// ID and Class links element with the style
-	// and used in selection of elements
-	//
-	// PARENT points the element to its parent element.
-	// The top-level element belongs to the page struct,
-	// so pass nil on it.
-	// Each element !!!MUST!!! have parent, otherwise crash
-	//
-	// CHILD holds a slice of pointers to its child elements.
-	// The element without childs holds nil
-	//
-	// REF holds reference link. Can be used as HREF in HTML
-	ID     string     `json:"ID"`
-	CLS    string     `json:"CLASS"`
-	PARENT parent     `json:"-"`
-	CHILD  []*element `json:"CHILD"`
-	REF    string     `json:"REF"`
-}
-
-func (e *element) method() {
-	// Dummy method to link page and element structs via interface
-}
-
-func (e *element) ChangeID(id string) {
-	e.ID = id
-}
-
-func (e *element) ChangeClass(class string) {
-	e.CLS = class
-}
-
-func (e *element) ChangeParent(parent parent) {
-	e.PARENT = parent
-}
-
-func (e *element) AppendChild(child *element) {
-	e.CHILD = append(e.CHILD, child)
-}
-
-func (e *element) ChangeRef(ref string) {
-	e.REF = ref
-}
-
-func (e *element) element_reset() {
-	// This method is called by the FlushElement method.
-	// Its purpose is to go recursively on each
-	// child and remove it (assign to nil).
-	e.ID = ""
-	e.CLS = ""
-	e.PARENT = nil
-	e.REF = ""
-	if len(e.CHILD) == 0 {
-		return
-	}
-	for i := range e.CHILD {
-		e.CHILD[i].element_reset()
-		e.CHILD[i] = nil
-	}
-}
-
-func (e *element) element_reset_keep_children(newparent parent) {
-	// This method is called by the Flush method.
-	// Its purpose is to change the pointers of
-	// first-dimension childs and change their
-	// parent to newparent.
-	e.ID = ""
-	e.CLS = ""
-	e.PARENT = nil
-	e.REF = ""
-	if len(e.CHILD) == 0 {
-		return
-	}
-	for i := range e.CHILD {
-		e.CHILD[i].PARENT = newparent
-	}
-}
-
-func FlushElement(element *element) *element {
-	defer runtime.GC()
-	// This method resets an element and calls
-	// garbage collector to remove it from the memory.
-	element.element_reset()
-	return nil
-}
-
-func FlushElementKeepChildren(element *element, newparent parent) *element {
-	defer runtime.GC()
-	// This method resets an element and calls
-	// garbage collector to remove it from the memory.
-	// Also it gives the element's children new parent.
-	element.element_reset_keep_children(newparent)
-	return nil
-}
-
-func NewElement(id string, class string, parent parent, child []*element, ref string) *element {
-	// Returns pointer to a new element struct
-	return &element{ID: id, CLS: class, PARENT: parent, CHILD: child, REF: ref}
-}
-
-func MakeTree_inJSON(element parent) []byte {
-	// Can be used for visual representation
-	tree, err := json.Marshal(element)
+func SPOT(egofile string) (*page, []*element) {
+	ego, err := os.Open(egofile)
 	if err != nil {
 		log.Fatalln(err)
-		return nil
+		return nil, nil
 	}
-	return tree
+	defer ego.Close()
+
+	page := NewPage()
+	var parent parent
+	var child_buffer, tree_buffer, parent_buffer []*element
+	var txt_buffer [][]byte
+
+	scanner := bufio.NewScanner(ego)
+	scanner.Bytes()
+
+	for scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			log.Fatal(err)
+			return nil, nil
+		}
+
+		line := scanner.Text()
+
+		zeros_counter := 0
+
+		for ; int(zeros_counter) < len(line); zeros_counter++ {
+			if line[zeros_counter] != 32 && line[zeros_counter] != 9 {
+				break
+			}
+		}
+
+		if zeros_counter > 0 {
+			line = line[zeros_counter:]
+		}
+
+		//fmt.Println(line)
+		//fmt.Println([]byte(line))
+
+		if len(line) <= 2 {
+			continue
+		}
+
+		for i := 0; i < len(line); {
+			//fmt.Println("current i:", i)
+			//fmt.Println("line len :", len(line))
+			if i < len(line)-2 {
+				if line[i:i+3] == Patterns["comment"] {
+					// comment is one-liner
+					break
+				}
+				if line[i:i+3] == Patterns["style"] &&
+					line[i+3:i+6] == Patterns["ref"] &&
+					string(line[i+7]) == Patterns["quotation"] {
+					// style inclusion is one-liner
+					charbuf := []byte{}
+					for j := 8; string(line[j]) != Patterns["quotation"]; j++ {
+						charbuf = append(charbuf, line[j])
+					}
+					style := NewStyle(string(charbuf))
+					page.AppendStyle(style)
+					break
+				}
+				if line[i:i+3] == Patterns["xcutable"] &&
+					line[i+3:i+6] == Patterns["ref"] &&
+					string(line[i+7]) == Patterns["quotation"] {
+					// xcutable inclusion is one-liner
+					charbuf := []byte{}
+					for j := 8; string(line[j]) != Patterns["quotation"]; j++ {
+						charbuf = append(charbuf, line[j])
+					}
+					x := NewX(string(charbuf))
+					page.AppendX(x)
+					break
+				}
+				if line[i:i+3] == Patterns["elementNoP"] {
+					parent = page
+					if len(parent_buffer) >= 1 {
+						// we choose between element and a page (nil) as a parent
+						parent = parent_buffer[len(parent_buffer)-1]
+					}
+					txt_buffer = append(txt_buffer, []byte{})
+					new_element := NewElement("std", "", parent, child_buffer, "")
+					parent_buffer = append(parent_buffer, new_element)
+					if i >= len(line)-3 {
+						break
+					}
+					i += 3
+				}
+				if line[i:i+3] == Patterns["elementCLS"] {
+					if len(parent_buffer) == 0 {
+						break
+					} else if len(parent_buffer) == 1 {
+						if len(txt_buffer) > 0 {
+							parent_buffer[0].AppendTXT(txt_buffer[0])
+							txt_buffer = [][]byte{}
+						}
+						parent_buffer[0].ChangeParent(page)
+						tree_buffer = append(tree_buffer, parent_buffer[0])
+						parent_buffer = nil
+					} else if len(parent_buffer) >= 2 {
+						if len(txt_buffer) > 0 {
+							parent_buffer[len(parent_buffer)-1].AppendTXT(txt_buffer[len(txt_buffer)-1])
+							txt_buffer = txt_buffer[:len(txt_buffer)-1]
+						}
+						parent_buffer[len(parent_buffer)-1].ChangeParent(parent_buffer[len(parent_buffer)-2])
+						parent_buffer[len(parent_buffer)-2].AppendChild(parent_buffer[len(parent_buffer)-1])
+						parent_buffer = parent_buffer[:len(parent_buffer)-1]
+					}
+					if i >= len(line)-3 {
+						break
+					}
+					i += 3
+				}
+				if line[i:i+3] == Patterns["elementWiP"] {
+					// something seems not right. can make it more compact
+					parent = page
+					if i >= len(line)-3 {
+						break
+					}
+					i += 3
+					var charbuf_id, charbuf_class, charbuf_ref []byte
+					for string(line[i]) != Patterns["propEND"] {
+						if line[i:i+2] == Patterns["id"] {
+							if string(line[i+3]) == Patterns["quotation"] {
+								i += 4
+								for ; string(line[i]) != Patterns["quotation"]; i++ {
+									charbuf_id = append(charbuf_id, line[i])
+								}
+								i++
+							}
+							if string(line[i]) == Patterns["propEND"] {
+								if i == len(line)-1 {
+									break
+								} else {
+									i++
+									break
+								}
+							} else {
+								i++
+							}
+						}
+						if line[i:i+5] == Patterns["class"] {
+							if string(line[i+6]) == Patterns["quotation"] {
+								i += 7
+								for ; string(line[i]) != Patterns["quotation"]; i++ {
+									charbuf_class = append(charbuf_class, line[i])
+								}
+								i++
+							}
+							if string(line[i]) == Patterns["propEND"] {
+								if i == len(line)-1 {
+									break
+								} else {
+									i++
+									break
+								}
+							} else {
+								i++
+							}
+						}
+						if line[i:i+3] == Patterns["ref"] {
+							if string(line[i+4]) == Patterns["quotation"] {
+								i += 5
+								for ; string(line[i]) != Patterns["quotation"]; i++ {
+									charbuf_ref = append(charbuf_ref, line[i])
+								}
+								i++
+							}
+							if string(line[i]) == Patterns["propEND"] {
+								if i == len(line)-1 {
+									break
+								} else {
+									i++
+									break
+								}
+							} else {
+								i++
+							}
+						}
+					}
+					if len(charbuf_id) == 0 {
+						charbuf_id = []byte("std")
+					}
+					if len(parent_buffer) >= 1 {
+						parent = parent_buffer[len(parent_buffer)-1]
+					}
+					txt_buffer = append(txt_buffer, []byte{})
+					new_element := NewElement(string(charbuf_id), string(charbuf_class), parent, child_buffer, string(charbuf_ref))
+					parent_buffer = append(parent_buffer, new_element)
+				}
+			}
+			if len(parent_buffer) == 0 {
+				break
+			}
+			if len(txt_buffer) == 0 {
+				txt_buffer = append(txt_buffer, []byte{})
+			}
+			txt_buffer[len(txt_buffer)-1] = append(txt_buffer[len(txt_buffer)-1], line[i])
+			i++
+		}
+	}
+	for len(parent_buffer) > 0 {
+		if len(parent_buffer) == 1 {
+			if len(txt_buffer) > 0 {
+				parent_buffer[0].AppendTXT(txt_buffer[0])
+				txt_buffer = [][]byte{}
+			}
+			parent_buffer[0].ChangeParent(page)
+			tree_buffer = append(tree_buffer, parent_buffer[0])
+			parent_buffer = nil
+		} else if len(parent_buffer) >= 2 {
+			if len(txt_buffer) > 0 {
+				parent_buffer[len(parent_buffer)-1].AppendTXT(txt_buffer[len(txt_buffer)-1])
+				txt_buffer = txt_buffer[:len(txt_buffer)-1]
+			}
+			parent_buffer[len(parent_buffer)-1].ChangeParent(parent_buffer[len(parent_buffer)-2])
+			parent_buffer[len(parent_buffer)-2].AppendChild(parent_buffer[len(parent_buffer)-1])
+			parent_buffer = parent_buffer[:len(parent_buffer)-1]
+		}
+	}
+	if page != nil {
+		return page, tree_buffer
+	}
+	log.Fatal("Page does not exist")
+	return nil, nil
+}
+
+func PrintPOT(page parent, tree []*element) {
+	fmt.Println("page        :", string(MakeTree_inJSON(page)))
+	fmt.Println("tree length :", len(tree))
+	for el := range tree {
+		fmt.Println("element", el+1, "  :", string(MakeTree_inJSON(tree[el])))
+	}
 }

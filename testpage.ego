@@ -1,4 +1,4 @@
-<e>This is some element</>
+<e id="natural">This is some element</>
 ### This is comment
 ### This element connects CSS file
 <s ref="style.css"/>
@@ -14,9 +14,11 @@
 <e id="flawless">Another top-level</>
 <e id="garry">loop<e id="garry2">loop2<e id="garry3">loop3</></></>
 <e class="begging">
+    so to check
     <e class="you">
         <e class="Iwanttobeyour">
             <e ref="babyhowlucky">Rasta</>
         </>
     </>
+    how it works
 </>
