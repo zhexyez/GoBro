@@ -3,7 +3,8 @@
 ### This element connects CSS file
 <s ref="style.css"/>
 ### This element connects Go file to execute scripts on POT (Page Object Tree)
-<x ref="executable.go"/>
+<x ref="../xcutable1.go"/>
+<x ref="../xcutable2.go"/>
 <e>Nested elements
     <e id="button" class="nice">Another element</>
     <e class="twice">Yet Another

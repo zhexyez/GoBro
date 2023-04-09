@@ -1,9 +1,40 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os/exec"
 	"time"
 )
+
+// This function provides an execution of and connection with
+// xcutables.
+func xcute(xcutable *xcutable, chan_completed chan<- bool) {
+	cmd := exec.Command("go", "run", xcutable.REF)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+	err = cmd.Start()
+	if err != nil {
+		panic(err)
+	}
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+		if scanner.Text() == "you are cutie" {
+			fmt.Println("thanks")
+		}
+		if scanner.Text() == "and me?" {
+			fmt.Println("you too!")
+		}
+	}
+	err = cmd.Wait()
+	if err != nil {
+		panic(err)
+	}
+	chan_completed <- true
+}
 
 func main() {
 	// test #1
@@ -38,10 +69,17 @@ func main() {
 	fmt.Println("element3>", elem3) */
 
 	i := time.Now()
-	page, tree, err := SPOT("testpage.ego")
-	if err != nil {
-		fmt.Print(err.Error())
+	page, tree, spoterr := SPOT("testpage.ego")
+	if spoterr != nil {
+		fmt.Print(spoterr.Error())
 	}
 	fmt.Println("Spawned in", time.Since(i).Nanoseconds(), "nanoseconds")
 	PrintPOT(page, tree)
+
+	// xcutables are executed 1 by 1 in mentioned order
+	for x := range page.XCUTABLES {
+		chan_completed := make(chan bool)
+		go xcute(page.XCUTABLES[x], chan_completed)
+		<-chan_completed
+	}
 }
