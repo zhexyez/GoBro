@@ -4,12 +4,76 @@ import (
 	"bufio"
 	"fmt"
 	"os/exec"
+	"syscall"
 	"time"
+	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
-// This function provides an execution of and connection with
-// xcutables.
+type MEMORYSTATUSEX struct {
+    dwLength                uint32
+    dwMemoryLoad            uint32
+    ullTotalPhys            uint64
+    ullAvailPhys            uint64
+    ullTotalPageFile        uint64
+    ullAvailPageFile        uint64
+    ullTotalVirtual         uint64
+    ullAvailVirtual         uint64
+    ullAvailExtendedVirtual uint64
+}
+
+type PROCESS_MEMORY_COUNTERS struct {
+    cb                         uint32
+    PageFaultCount             uint32
+    PeakWorkingSetSize         uint64
+    WorkingSetSize             uint64
+    QuotaPeakPagedPoolUsage    uint64
+    QuotaPagedPoolUsage        uint64
+    QuotaPeakNonPagedPoolUsage uint64
+    QuotaNonPagedPoolUsage     uint64
+    PagefileUsage              uint64
+    PeakPagefileUsage          uint64
+}
+
+func TotalMemory () uint64 {
+	kernel32 := windows.NewLazySystemDLL("kernel32.dll")
+    globalMemoryStatusEx := kernel32.NewProc("GlobalMemoryStatusEx")
+
+    var memInfo MEMORYSTATUSEX
+    memInfo.dwLength = uint32(unsafe.Sizeof(memInfo))
+
+    ret, _, err := globalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&memInfo)))
+    if ret == 0 {
+        panic(fmt.Sprintf("Call to GlobalMemoryStatusEx failed: %v", err))
+    }
+
+    // fmt.Printf("Total memory: %d GB\n", memInfo.ullTotalPhys / 1073741824)
+	return memInfo.ullTotalPhys
+}
+
+func ProcessMemory() uint64 {
+	kernel32 := syscall.NewLazyDLL("kernel32.dll")
+    psapi := syscall.NewLazyDLL("psapi.dll")
+
+    getCurrentProcess := kernel32.NewProc("GetCurrentProcess")
+    getProcessMemoryInfo := psapi.NewProc("GetProcessMemoryInfo")
+
+    var memCounters PROCESS_MEMORY_COUNTERS
+
+    currentProcess, _, _ := getCurrentProcess.Call()
+    ret, _, err := getProcessMemoryInfo.Call(currentProcess, uintptr(unsafe.Pointer(&memCounters)), uintptr(unsafe.Sizeof(memCounters)))
+    if ret == 0 {
+        panic(fmt.Sprintf("Call to GetProcessMemoryInfo failed: %v", err))
+    }
+
+    //fmt.Printf("Working set size: %d MB\n", memCounters.WorkingSetSize / 1048576)
+	return memCounters.WorkingSetSize
+}
+
 func xcute(xcutable *xcutable, chan_completed chan<- bool) {
+	// This function provides an execution of and connection with
+	// xcutables.
 	cmd := exec.Command("go", "run", xcutable.REF)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -37,37 +101,10 @@ func xcute(xcutable *xcutable, chan_completed chan<- bool) {
 }
 
 func main() {
-	// test #1
-	/*fmt.Println("to be >")
-
-	// test #1.1> creating
-	page := NewPage()
-	elem := NewElement("baby", "boom", page, nil, "")
-	elem2 := NewElement("baby2", "boom2", elem, nil, "")
-	elem3 := NewElement("baby3", "boom3", elem, nil, "")
-	elem.AppendChild(elem2)
-	elem.AppendChild(elem3)
-
-	// test #1.2> changing
-	elem.ChangeClass("boogie")
-	elem.ChangeID("rasta")
-
-	// test #1.3> printing info
-	fmt.Println("element>", elem)
-	fmt.Println(elem.PARENT)
-	fmt.Println(elem.CHILD)
-	fmt.Println("element2>", elem2)
-	fmt.Println("element3>", elem3)
-
-	// test #1.4> printing in JSON format
-	fmt.Println(string(MakeTree_inJSON(elem)))
-
-	// test #1.5> removing keeping children
-	elem = FlushElementKeepChildren(elem, page)
-	fmt.Println("element>", elem)
-	fmt.Println("element2>", elem2)
-	fmt.Println("element3>", elem3) */
-
+	// // // // // 
+	fmt.Println(TotalMemory())
+	fmt.Println(ProcessMemory())
+	// // // // //
 	i := time.Now()
 	page, tree, spoterr := SPOT("testpage.ego")
 	if spoterr != nil {
@@ -81,5 +118,9 @@ func main() {
 		chan_completed := make(chan bool)
 		go xcute(page.XCUTABLES[x], chan_completed)
 		<-chan_completed
+		// fmt.Println(ProcessMemory())
+		// if ProcessMemory() > 6 {
+		// 	return
+		// }
 	}
 }
