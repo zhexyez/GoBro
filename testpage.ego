@@ -13,7 +13,7 @@
     <e>And even more nested <e>in one row</></>
 </>
 <e id="flawless">Another top-level</>
-<e id="garry">loop<e id="garry2">loop2<e id="garry3">loop3</></></>
+<e id="garry">loop<e id="garry">loop2<e id="garry">loop3</></></>
 <e class="begging">
     so to check 
     <e class="you">

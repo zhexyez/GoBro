@@ -182,9 +182,9 @@ func FlushElementKeepChildren(element *element, newparent parent) *element {
 	return nil
 }
 
-func NewElement(id string, class string, parent parent, child []*element, ref string) *element {
+func NewElement(id string, class string, parent parent, child []*element, ref string, txt string) *element {
 	// Returns pointer to a new element struct
-	return &element{ID: id, CLS: class, PARENT: parent, CHILD: child, REF: ref}
+	return &element{ID: id, CLS: class, PARENT: parent, CHILD: child, REF: ref, TXT: txt}
 }
 
 func MakeTree_inJSON(element parent) []byte {

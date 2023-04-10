@@ -96,6 +96,9 @@ func xcute(xcutable *xcutable, page page, tree []*element, chan_completed chan<-
 		if params[0] == "0x24" {
 			api.NewElement(params[1:])
 		}
+		if params[0] == "0x25" {
+			api.ElementsChangeID(params[1:])
+		}
 	}
 	err = cmd.Wait()
 	if err != nil {
@@ -114,20 +117,23 @@ func xcute_man(xcutables []*xcutable, page page, tree []*element, chan_comm chan
 }
 
 func main() {
-	// // // // // 
-	//fmt.Println(TotalMemory())
-	//fmt.Println(ProcessMemory())
-	// // // // //
+	// // // // // // // // // // // //
+	//fmt.Println(TotalMemory())     //
+	//fmt.Println(ProcessMemory())   //
+	// // // // // // // // // // // //
+
 	i := time.Now()
-	page, tree, spoterr := SPOT("testpage.ego")
+	page, tree, objmap, spoterr := SPOT("testpage.ego")
 	if spoterr != nil {
 		fmt.Print(spoterr.Error())
 	}
 	fmt.Println("Spawned in", time.Since(i).Nanoseconds(), "nanoseconds")
-	//PrintPOT(page, tree)
+
+	fmt.Println(objmap)
 
 	chan_comm := make(chan bool)
 	go xcute_man(page.XCUTABLES, *page, tree, chan_comm)
 	<-chan_comm
 	fmt.Println("Program took", time.Since(i).Milliseconds(), "milliseconds")
+	PrintPOT(page, tree)
 }

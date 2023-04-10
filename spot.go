@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+var ObjMap map[string][]*element = make(map[string][]*element)
+
 var keychars map[byte]string = map[byte]string{
 	60:  "<",
 	62:  ">",
@@ -50,10 +52,25 @@ func (e *POTError) Error() string {
 	return e.TXT
 }
 
-func SPOT(egofile string) (*page, []*element, *POTError) {
+// func makehash(element *element, objmap map[string][]*element) {
+// 	objmap[element.ID] = append(objmap[element.ID], element)
+// 	if len(element.CHILD) > 0 {
+// 		for el := range element.CHILD {
+// 			makehash(element.CHILD[el], objmap)
+// 		}
+// 	}
+// }
+
+// func pothash(tree []*element, objmap map[string][]*element) {
+// 	for el := range tree {
+// 		makehash(tree[el], objmap)
+// 	}
+// }
+
+func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError) {
 	ego, err := os.Open(egofile)
 	if err != nil {
-		return nil, nil, &POTError{TXT: "Unable to open the file. Possible error:" + err.Error()}
+		return nil, nil, nil, &POTError{TXT: "Unable to open the file. Possible error:" + err.Error()}
 	}
 	defer ego.Close()
 
@@ -69,7 +86,7 @@ func SPOT(egofile string) (*page, []*element, *POTError) {
 
 	for scanner.Scan() {
 		if err := scanner.Err(); err != nil {
-			return nil, nil, &POTError{TXT: "Unable to scan the file. Possible error:" + err.Error()}
+			return nil, nil, nil, &POTError{TXT: "Unable to scan the file. Possible error:" + err.Error()}
 		}
 
 		line := scanner.Text()
@@ -125,7 +142,8 @@ func SPOT(egofile string) (*page, []*element, *POTError) {
 						parent = parent_buffer[len(parent_buffer)-1]
 					}
 					txt_buffer = append(txt_buffer, []byte{})
-					new_element := NewElement("std", "", parent, child_buffer, "")
+					new_element := NewElement("std", "", parent, child_buffer, "", "")
+					ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
 					parent_buffer = append(parent_buffer, new_element)
 					if i >= len(line)-3 {
 						break
@@ -235,7 +253,8 @@ func SPOT(egofile string) (*page, []*element, *POTError) {
 						parent = parent_buffer[len(parent_buffer)-1]
 					}
 					txt_buffer = append(txt_buffer, []byte{})
-					new_element := NewElement(string(charbuf_id), string(charbuf_class), parent, child_buffer, string(charbuf_ref))
+					new_element := NewElement(string(charbuf_id), string(charbuf_class), parent, child_buffer, string(charbuf_ref), "")
+					ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
 					parent_buffer = append(parent_buffer, new_element)
 				}
 			}
@@ -273,10 +292,10 @@ func SPOT(egofile string) (*page, []*element, *POTError) {
 		}
 	}
 	if page != nil {
-		return page, tree_buffer, nil
+		return page, tree_buffer, &ObjMap, nil
 	}
 	log.Fatal("Page does not exist")
-	return nil, nil, &POTError{TXT: "Page does not exist!"}
+	return nil, nil, nil, &POTError{TXT: "Page does not exist!"}
 }
 
 func PrintPOT(page parent, tree []*element) {
