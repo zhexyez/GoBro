@@ -89,7 +89,6 @@ func xcute(xcutable *xcutable, page page, tree []*element, chan_completed chan<-
 	api := API{Page: page, Tree: tree}
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
-		i := time.Now()
 		params := strings.Split(scanner.Text(), "\x10")
 		if params[0] == "0x5" {
 			api.PrintStructure()
@@ -97,7 +96,6 @@ func xcute(xcutable *xcutable, page page, tree []*element, chan_completed chan<-
 		if params[0] == "0x24" {
 			api.NewElement(params[1:])
 		}
-		fmt.Println(time.Since(i).Nanoseconds(), "nanoseconds")
 	}
 	err = cmd.Wait()
 	if err != nil {
@@ -117,8 +115,8 @@ func xcute_man(xcutables []*xcutable, page page, tree []*element, chan_comm chan
 
 func main() {
 	// // // // // 
-	fmt.Println(TotalMemory())
-	fmt.Println(ProcessMemory())
+	//fmt.Println(TotalMemory())
+	//fmt.Println(ProcessMemory())
 	// // // // //
 	i := time.Now()
 	page, tree, spoterr := SPOT("testpage.ego")
@@ -131,4 +129,5 @@ func main() {
 	chan_comm := make(chan bool)
 	go xcute_man(page.XCUTABLES, *page, tree, chan_comm)
 	<-chan_comm
+	fmt.Println("Program took", time.Since(i).Milliseconds(), "milliseconds")
 }

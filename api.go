@@ -16,9 +16,9 @@ func (api *API) PrintStructure() {
 }
 
 func (api *API) NewElement(params []string) {
-	fmt.Println("parent id:", params[0])
-	fmt.Println("id:", params[1])
-	fmt.Println("class:", params[2])
-	fmt.Println("ref:", params[3])
-	fmt.Println("txt:", params[4])
+	// fmt.Println("parent id:", params[0])
+	// fmt.Println("id:", params[1])
+	// fmt.Println("class:", params[2])
+	// fmt.Println("ref:", params[3])
+	// fmt.Println("txt:", params[4])
 }
