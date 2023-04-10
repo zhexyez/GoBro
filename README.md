@@ -1,5 +1,5 @@
 # GoBro
-![GoBro](https://user-images.githubusercontent.com/35332515/230258554-7fe9de2c-55c9-4142-8df8-15aea8eff420.png)
+![GoBro](https://user-images.githubusercontent.com/35332515/231014731-3e4afc93-690a-4cbb-b7dd-5cf1f0c0044c.png)
 <h2>A Go browser. Render pages using new format ".ego" and standard ".css".</h2>
 <p>Go is a beautiful programming language, so it deserves a browser written on it. But not <b><i>any</i></b> browser. Especially not the type that runs on <b><i>JavaScript</i></b>.</p>
 <p>This <b>project</b> aims to create an entirely independent system of parsing and displaying documents.</p><br/>
