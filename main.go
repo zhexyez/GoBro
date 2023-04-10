@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"fmt"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
+
+const open string = "../"
 
 type MEMORYSTATUSEX struct {
     dwLength                uint32
@@ -71,10 +74,10 @@ func ProcessMemory() uint64 {
 	return memCounters.WorkingSetSize
 }
 
-func xcute(xcutable *xcutable, chan_completed chan<- bool) {
+func xcute(xcutable *xcutable, page page, tree []*element, chan_completed chan<- bool) {
 	// This function provides an execution of and connection with
 	// xcutables.
-	cmd := exec.Command("go", "run", xcutable.REF)
+	cmd := exec.Command("go", "run", open+xcutable.REF)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		panic(err)
@@ -83,21 +86,33 @@ func xcute(xcutable *xcutable, chan_completed chan<- bool) {
 	if err != nil {
 		panic(err)
 	}
+	api := API{Page: page, Tree: tree}
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-		if scanner.Text() == "you are cutie" {
-			fmt.Println("thanks")
+		i := time.Now()
+		params := strings.Split(scanner.Text(), "\x10")
+		if params[0] == "0x5" {
+			api.PrintStructure()
 		}
-		if scanner.Text() == "and me?" {
-			fmt.Println("you too!")
+		if params[0] == "0x24" {
+			api.NewElement(params[1:])
 		}
+		fmt.Println(time.Since(i).Nanoseconds(), "nanoseconds")
 	}
 	err = cmd.Wait()
 	if err != nil {
 		panic(err)
 	}
 	chan_completed <- true
+}
+
+func xcute_man(xcutables []*xcutable, page page, tree []*element, chan_comm chan<- bool) {
+	for x := range xcutables {
+		chan_completed := make(chan bool)
+		go xcute(xcutables[x], page, tree, chan_completed)
+		<-chan_completed
+	}
+	chan_comm <- true
 }
 
 func main() {
@@ -111,16 +126,9 @@ func main() {
 		fmt.Print(spoterr.Error())
 	}
 	fmt.Println("Spawned in", time.Since(i).Nanoseconds(), "nanoseconds")
-	PrintPOT(page, tree)
+	//PrintPOT(page, tree)
 
-	// xcutables are executed 1 by 1 in mentioned order
-	for x := range page.XCUTABLES {
-		chan_completed := make(chan bool)
-		go xcute(page.XCUTABLES[x], chan_completed)
-		<-chan_completed
-		// fmt.Println(ProcessMemory())
-		// if ProcessMemory() > 6 {
-		// 	return
-		// }
-	}
+	chan_comm := make(chan bool)
+	go xcute_man(page.XCUTABLES, *page, tree, chan_comm)
+	<-chan_comm
 }
