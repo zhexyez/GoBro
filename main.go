@@ -74,7 +74,7 @@ func ProcessMemory() uint64 {
 	return memCounters.WorkingSetSize
 }
 
-func xcute(xcutable *xcutable, page page, tree []*element, chan_completed chan<- bool) {
+func xcute(xcutable *xcutable, api *API, chan_completed chan<- bool) {
 	// This function provides an execution of and connection with
 	// xcutables.
 	cmd := exec.Command("go", "run", open+xcutable.REF)
@@ -86,7 +86,6 @@ func xcute(xcutable *xcutable, page page, tree []*element, chan_completed chan<-
 	if err != nil {
 		panic(err)
 	}
-	api := API{Page: page, Tree: tree}
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		params := strings.Split(scanner.Text(), "\x10")
@@ -107,10 +106,10 @@ func xcute(xcutable *xcutable, page page, tree []*element, chan_completed chan<-
 	chan_completed <- true
 }
 
-func xcute_man(xcutables []*xcutable, page page, tree []*element, chan_comm chan<- bool) {
+func xcute_man(xcutables []*xcutable, api *API, chan_comm chan<- bool) {
 	for x := range xcutables {
 		chan_completed := make(chan bool)
-		go xcute(xcutables[x], page, tree, chan_completed)
+		go xcute(xcutables[x], api, chan_completed)
 		<-chan_completed
 	}
 	chan_comm <- true
@@ -123,17 +122,18 @@ func main() {
 	// // // // // // // // // // // //
 
 	i := time.Now()
-	page, tree, objmap, spoterr := SPOT("testpage.ego")
+	page, tree, _, spoterr := SPOT("testpage.ego")
 	if spoterr != nil {
 		fmt.Print(spoterr.Error())
 	}
+	api := API{Page: page, Tree: tree}
 	fmt.Println("Spawned in", time.Since(i).Nanoseconds(), "nanoseconds")
 
-	fmt.Println(objmap)
+	//fmt.Println(objmap)
 
 	chan_comm := make(chan bool)
-	go xcute_man(page.XCUTABLES, *page, tree, chan_comm)
+	go xcute_man(page.XCUTABLES, &api, chan_comm)
 	<-chan_comm
 	fmt.Println("Program took", time.Since(i).Milliseconds(), "milliseconds")
-	PrintPOT(page, tree)
+	//PrintPOT(api.Page, api.Tree)
 }

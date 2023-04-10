@@ -5,7 +5,7 @@ import (
 )
 
 type API struct {
-	Page page
+	Page *page
 	Tree []*element
 }
 
@@ -16,8 +16,9 @@ func (api *API) PrintStructure() {
 }
 
 func (api *API) NewElement(params []string) {
-	x := NewElement(params[1], params[2], &api.Page, nil, params[3], params[4])
-	ObjMap[params[1]] = append(ObjMap[params[1]], x)
+	x := NewElement(params[0], params[1], api.Page, nil, params[2], params[3])
+	api.Tree = append(api.Tree, x)
+	ObjMap[params[0]] = append(ObjMap[params[0]], x)
 }
 
 func (api *API) ElementsChangeID(params []string) {
