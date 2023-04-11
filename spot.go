@@ -9,6 +9,8 @@ import (
 
 var ObjMap map[string][]*element = make(map[string][]*element)
 
+var charbuf_id, charbuf_class, charbuf_ref []byte
+
 var keychars map[byte]string = map[byte]string{
 	60:  "<",
 	62:  ">",
@@ -52,6 +54,20 @@ func (e *POTError) Error() string {
 	return e.TXT
 }
 
+// // // // // // // // //
+//  SECTION DEPRECATED	//
+// // // // // // // // //
+
+// txt_buffer = append(txt_buffer, []byte{})
+// new_element := NewElement("std", "", parent, child_buffer, "", "")
+// ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
+// parent_buffer = append(parent_buffer, new_element)
+
+// txt_buffer = append(txt_buffer, []byte{})
+// new_element := NewElement(string(charbuf_id), string(charbuf_class), parent, child_buffer, string(charbuf_ref), "")
+// ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
+// parent_buffer = append(parent_buffer, new_element)
+
 // func makehash(element *element, objmap map[string][]*element) {
 // 	objmap[element.ID] = append(objmap[element.ID], element)
 // 	if len(element.CHILD) > 0 {
@@ -67,6 +83,62 @@ func (e *POTError) Error() string {
 // 	}
 // }
 
+// if line[i:i+2] == Patterns["id"] {
+// 	if string(line[i+3]) == Patterns["quotation"] {
+// 		i += 4
+// 		for ; string(line[i]) != Patterns["quotation"]; i++ {
+// 			charbuf_id = append(charbuf_id, line[i])
+// 		}
+// 		i++
+// 	}
+// 	if string(line[i]) == Patterns["propEND"] {
+// 		if i == len(line)-1 {
+// 			EOL = true
+// 			break
+// 		} else {
+// 			i++
+// 			break
+// 		}
+// 	} else {
+// 		i++
+// 	}
+
+func checkElementWiP(line *string, i *int, n int, charbuf *[]byte, EOL *bool, propend *bool) {
+	if string((*line)[(*i)+n]) == Patterns["quotation"] {
+		(*i) += (n+1)
+		for ; string((*line)[(*i)]) != Patterns["quotation"]; (*i)++ {
+			(*charbuf) = append((*charbuf), (*line)[(*i)])
+		}
+		(*i)++
+	}
+	if string((*line)[(*i)]) == Patterns["propEND"] {
+		if (*i) == len((*line))-1 {
+			(*EOL) = true
+			(*propend) = true
+			return
+		} else {
+			(*i)++
+			(*propend) = true
+			return
+		}
+	} else {
+		(*i)++
+		(*propend) = true
+		return
+	}
+}
+
+func makeNewElement(parent_buffer *[]*element, txt_buffer *[][]byte, charbuf_id *[]byte, charbuf_class *[]byte, parent *parent, child_buffer *[]*element, charbuf_ref *[]byte) {
+	(*txt_buffer) = append((*txt_buffer), []byte{})
+	new_element := NewElement(string((*charbuf_id)), string((*charbuf_class)), *parent, *child_buffer, string((*charbuf_ref)), "")
+	ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
+	(*parent_buffer) = append((*parent_buffer), new_element)
+}
+
+func checkRefStyle() {
+
+}
+
 func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError) {
 	ego, err := os.Open(egofile)
 	if err != nil {
@@ -74,6 +146,7 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 	}
 	defer ego.Close()
 
+	// Create instance of page and intermediate buffers
 	page := NewPage()
 	var parent parent
 	var child_buffer, tree_buffer, parent_buffer []*element
@@ -91,15 +164,12 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 
 		line := scanner.Text()
 
+		// Remove all zeros from the beginning of the line
 		zeros_counter := 0
-		for ; int(zeros_counter) < len(line); zeros_counter++ {
-			if line[zeros_counter] != 32 && line[zeros_counter] != 9 {
-				break
-			}
+		for line[zeros_counter] == 32 || line[zeros_counter] == 9 {
+			zeros_counter++
 		}
-		if zeros_counter > 0 {
-			line = line[zeros_counter:]
-		}
+		line = line[zeros_counter:]
 
 		if len(line) <= 2 {
 			continue
@@ -108,9 +178,11 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 		for i := 0; i < len(line); {
 			if i < len(line)-2 {
 				if line[i:i+3] == Patterns["comment"] {
-					// comment is one-liner
+					// Comment is one-liner. We don't care about saving comments
 					break
 				}
+				// TODO: make one function. They are almost the same
+				checkRefStyle()
 				if line[i:i+3] == Patterns["style"] &&
 					line[i+3:i+6] == Patterns["ref"] &&
 					string(line[i+7]) == Patterns["quotation"] {
@@ -138,18 +210,18 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 				if line[i:i+3] == Patterns["elementNoP"] {
 					parent = page
 					if len(parent_buffer) >= 1 {
-						// we choose between element and a page (nil) as a parent
+						// We choose between element and a page (nil) as a parent
 						parent = parent_buffer[len(parent_buffer)-1]
 					}
-					txt_buffer = append(txt_buffer, []byte{})
-					new_element := NewElement("std", "", parent, child_buffer, "", "")
-					ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
-					parent_buffer = append(parent_buffer, new_element)
+					makeNewElement(&parent_buffer, &txt_buffer, &charbuf_id, &charbuf_class, &parent, &child_buffer, &charbuf_ref)
+					charbuf_id, charbuf_class, charbuf_ref = []byte{}, []byte{}, []byte{}
 					if i >= len(line)-3 {
 						break
 					}
 					i += 3
 				}
+				// TODO: rewrite so it makes one function with the last
+				// before page != nil statement
 				if line[i:i+3] == Patterns["elementCLS"] {
 					if len(parent_buffer) == 0 {
 						break
@@ -183,67 +255,19 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 					}
 					parent = page
 					i += 3
-					var charbuf_id, charbuf_class, charbuf_ref []byte
-					for string(line[i]) != Patterns["propEND"] {
-						if line[i:i+2] == Patterns["id"] {
-							if string(line[i+3]) == Patterns["quotation"] {
-								i += 4
-								for ; string(line[i]) != Patterns["quotation"]; i++ {
-									charbuf_id = append(charbuf_id, line[i])
-								}
-								i++
-							}
-							if string(line[i]) == Patterns["propEND"] {
-								if i == len(line)-1 {
-									EOL = true
-									break
-								} else {
-									i++
-									break
-								}
-							} else {
-								i++
-							}
-						}
-						if line[i:i+5] == Patterns["class"] {
-							if string(line[i+6]) == Patterns["quotation"] {
-								i += 7
-								for ; string(line[i]) != Patterns["quotation"]; i++ {
-									charbuf_class = append(charbuf_class, line[i])
-								}
-								i++
-							}
-							if string(line[i]) == Patterns["propEND"] {
-								if i == len(line)-1 {
-									EOL = true
-									break
-								} else {
-									i++
-									break
-								}
-							} else {
-								i++
-							}
-						}
-						if line[i:i+3] == Patterns["ref"] {
-							if string(line[i+4]) == Patterns["quotation"] {
-								i += 5
-								for ; string(line[i]) != Patterns["quotation"]; i++ {
-									charbuf_ref = append(charbuf_ref, line[i])
-								}
-								i++
-							}
-							if string(line[i]) == Patterns["propEND"] {
-								if i == len(line)-1 {
-									EOL = true
-									break
-								} else {
-									i++
-									break
-								}
-							} else {
-								i++
-							}
+					// var charbuf_id, charbuf_class, charbuf_ref []byte
+					var occurencies_check [3]byte = [3]byte{0,0,0}
+					var propend bool = false
+					for !propend {
+						if line[i:i+2] == Patterns["id"] && occurencies_check[0] == 0 {
+							checkElementWiP(&line, &i, 3, &charbuf_id, &EOL, &propend)
+							occurencies_check[0]++
+						} else if line[i:i+5] == Patterns["class"] && occurencies_check[1] == 0 {
+							checkElementWiP(&line, &i, 6, &charbuf_class, &EOL, &propend)
+							occurencies_check[0]++
+						} else if line[i:i+3] == Patterns["ref"] && occurencies_check[2] == 0 {
+							checkElementWiP(&line, &i, 4, &charbuf_class, &EOL, &propend)
+							occurencies_check[0]++
 						}
 					}
 					if len(charbuf_id) == 0 {
@@ -252,10 +276,8 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 					if len(parent_buffer) >= 1 {
 						parent = parent_buffer[len(parent_buffer)-1]
 					}
-					txt_buffer = append(txt_buffer, []byte{})
-					new_element := NewElement(string(charbuf_id), string(charbuf_class), parent, child_buffer, string(charbuf_ref), "")
-					ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
-					parent_buffer = append(parent_buffer, new_element)
+					makeNewElement(&parent_buffer, &txt_buffer, &charbuf_id, &charbuf_class, &parent, &child_buffer, &charbuf_ref)
+					charbuf_id, charbuf_class, charbuf_ref = []byte{}, []byte{}, []byte{}
 				}
 			}
 			if len(parent_buffer) == 0 {

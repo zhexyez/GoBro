@@ -126,7 +126,7 @@ func main() {
 	if spoterr != nil {
 		fmt.Print(spoterr.Error())
 	}
-	api := API{Page: page, Tree: tree}
+	api := API{Page: page, Tree: &tree}
 	fmt.Println("Spawned in", time.Since(i).Nanoseconds(), "nanoseconds")
 
 	//fmt.Println(objmap)
@@ -135,5 +135,5 @@ func main() {
 	go xcute_man(page.XCUTABLES, &api, chan_comm)
 	<-chan_comm
 	fmt.Println("Program took", time.Since(i).Milliseconds(), "milliseconds")
-	//PrintPOT(api.Page, api.Tree)
+	PrintPOT(api.Page, *api.Tree)
 }

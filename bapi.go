@@ -6,18 +6,18 @@ import (
 
 type API struct {
 	Page *page
-	Tree []*element
+	Tree *[]*element
 }
 
 func (api *API) PrintStructure() {
-	for el := range api.Tree {
-		fmt.Println("element", el+1, "  :", string(MakeTree_inJSON(api.Tree[el])))
+	for el := range *api.Tree {
+		fmt.Println("element", el+1, "  :", string(MakeTree_inJSON((*api.Tree)[el])))
 	}
 }
 
 func (api *API) NewElement(params []string) {
 	x := NewElement(params[0], params[1], api.Page, nil, params[2], params[3])
-	api.Tree = append(api.Tree, x)
+	(*api.Tree) = append((*api.Tree), x)
 	ObjMap[params[0]] = append(ObjMap[params[0]], x)
 }
 
