@@ -103,6 +103,31 @@ func (e *POTError) Error() string {
 // 		i++
 // 	}
 
+// if line[i:i+3] == Patterns["style"] &&
+// 	line[i+3:i+6] == Patterns["ref"] &&
+// 	string(line[i+7]) == Patterns["quotation"] {
+// 	// style inclusion is one-liner
+// 	charbuf := []byte{}
+// 	for j := 8; string(line[j]) != Patterns["quotation"]; j++ {
+// 		charbuf = append(charbuf, line[j])
+// 	}
+// 	style := NewStyle(string(charbuf))
+// 	page.AppendStyle(style)
+// 	break
+// }
+// if line[i:i+3] == Patterns["xcutable"] &&
+// 	line[i+3:i+6] == Patterns["ref"] &&
+// 	string(line[i+7]) == Patterns["quotation"] {
+// 	// xcutable inclusion is one-liner
+// 	charbuf := []byte{}
+// 	for j := 8; string(line[j]) != Patterns["quotation"]; j++ {
+// 		charbuf = append(charbuf, line[j])
+// 	}
+// 	x := NewX(string(charbuf))
+// 	page.AppendX(x)
+// 	break
+// }
+
 func checkElementWiP(line *string, i *int, n int, charbuf *[]byte, EOL *bool, propend *bool) {
 	if string((*line)[(*i)+n]) == Patterns["quotation"] {
 		(*i) += (n+1)
@@ -135,8 +160,16 @@ func makeNewElement(parent_buffer *[]*element, txt_buffer *[][]byte, charbuf_id 
 	(*parent_buffer) = append((*parent_buffer), new_element)
 }
 
-func checkRefStyle() {
-
+func fillRef(line *string, i *int) []byte {
+	if (*line)[(*i)+3:(*i)+6] == Patterns["ref"] && string((*line)[(*i)+7]) == Patterns["quotation"] {
+		charbuf := []byte{}
+		for j := 8; string((*line)[j]) != Patterns["quotation"]; j++ {
+			charbuf = append(charbuf, (*line)[j])
+		}
+		return charbuf
+	} else {
+		return []byte{}
+	}
 }
 
 func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError) {
@@ -151,6 +184,7 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 	var parent parent
 	var child_buffer, tree_buffer, parent_buffer []*element
 	var txt_buffer [][]byte
+	var charbuf []byte
 
 	var EOL bool = false
 
@@ -181,28 +215,15 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 					// Comment is one-liner. We don't care about saving comments
 					break
 				}
-				// TODO: make one function. They are almost the same
-				checkRefStyle()
-				if line[i:i+3] == Patterns["style"] &&
-					line[i+3:i+6] == Patterns["ref"] &&
-					string(line[i+7]) == Patterns["quotation"] {
-					// style inclusion is one-liner
-					charbuf := []byte{}
-					for j := 8; string(line[j]) != Patterns["quotation"]; j++ {
-						charbuf = append(charbuf, line[j])
-					}
+				// style and xcutable inclusions are one-liners
+				if line[i:i+3] == Patterns["style"] {
+					charbuf = fillRef(&line, &i)
 					style := NewStyle(string(charbuf))
 					page.AppendStyle(style)
 					break
 				}
-				if line[i:i+3] == Patterns["xcutable"] &&
-					line[i+3:i+6] == Patterns["ref"] &&
-					string(line[i+7]) == Patterns["quotation"] {
-					// xcutable inclusion is one-liner
-					charbuf := []byte{}
-					for j := 8; string(line[j]) != Patterns["quotation"]; j++ {
-						charbuf = append(charbuf, line[j])
-					}
+				if line[i:i+3] == Patterns["xcutable"] {
+					charbuf = fillRef(&line, &i)
 					x := NewX(string(charbuf))
 					page.AppendX(x)
 					break
@@ -210,7 +231,6 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 				if line[i:i+3] == Patterns["elementNoP"] {
 					parent = page
 					if len(parent_buffer) >= 1 {
-						// We choose between element and a page (nil) as a parent
 						parent = parent_buffer[len(parent_buffer)-1]
 					}
 					makeNewElement(&parent_buffer, &txt_buffer, &charbuf_id, &charbuf_class, &parent, &child_buffer, &charbuf_ref)
