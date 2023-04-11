@@ -136,4 +136,5 @@ func main() {
 	<-chan_comm
 	fmt.Println("Program took", time.Since(i).Milliseconds(), "milliseconds")
 	PrintPOT(api.Page, *api.Tree)
+	fmt.Println(ObjMap)
 }

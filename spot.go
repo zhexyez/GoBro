@@ -32,6 +32,7 @@ var keychars map[byte]string = map[byte]string{
 	9:   "\x09",
 }
 
+// Can be extended to contain "context" keyword
 var Patterns map[string]string = map[string]string{
 	"style":      keychars[60] + keychars[115] + keychars[32],
 	"xcutable":   keychars[60] + keychars[120] + keychars[32],
@@ -54,80 +55,7 @@ func (e *POTError) Error() string {
 	return e.TXT
 }
 
-// // // // // // // // //
-//  SECTION DEPRECATED	//
-// // // // // // // // //
-
-// txt_buffer = append(txt_buffer, []byte{})
-// new_element := NewElement("std", "", parent, child_buffer, "", "")
-// ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
-// parent_buffer = append(parent_buffer, new_element)
-
-// txt_buffer = append(txt_buffer, []byte{})
-// new_element := NewElement(string(charbuf_id), string(charbuf_class), parent, child_buffer, string(charbuf_ref), "")
-// ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
-// parent_buffer = append(parent_buffer, new_element)
-
-// func makehash(element *element, objmap map[string][]*element) {
-// 	objmap[element.ID] = append(objmap[element.ID], element)
-// 	if len(element.CHILD) > 0 {
-// 		for el := range element.CHILD {
-// 			makehash(element.CHILD[el], objmap)
-// 		}
-// 	}
-// }
-
-// func pothash(tree []*element, objmap map[string][]*element) {
-// 	for el := range tree {
-// 		makehash(tree[el], objmap)
-// 	}
-// }
-
-// if line[i:i+2] == Patterns["id"] {
-// 	if string(line[i+3]) == Patterns["quotation"] {
-// 		i += 4
-// 		for ; string(line[i]) != Patterns["quotation"]; i++ {
-// 			charbuf_id = append(charbuf_id, line[i])
-// 		}
-// 		i++
-// 	}
-// 	if string(line[i]) == Patterns["propEND"] {
-// 		if i == len(line)-1 {
-// 			EOL = true
-// 			break
-// 		} else {
-// 			i++
-// 			break
-// 		}
-// 	} else {
-// 		i++
-// 	}
-
-// if line[i:i+3] == Patterns["style"] &&
-// 	line[i+3:i+6] == Patterns["ref"] &&
-// 	string(line[i+7]) == Patterns["quotation"] {
-// 	// style inclusion is one-liner
-// 	charbuf := []byte{}
-// 	for j := 8; string(line[j]) != Patterns["quotation"]; j++ {
-// 		charbuf = append(charbuf, line[j])
-// 	}
-// 	style := NewStyle(string(charbuf))
-// 	page.AppendStyle(style)
-// 	break
-// }
-// if line[i:i+3] == Patterns["xcutable"] &&
-// 	line[i+3:i+6] == Patterns["ref"] &&
-// 	string(line[i+7]) == Patterns["quotation"] {
-// 	// xcutable inclusion is one-liner
-// 	charbuf := []byte{}
-// 	for j := 8; string(line[j]) != Patterns["quotation"]; j++ {
-// 		charbuf = append(charbuf, line[j])
-// 	}
-// 	x := NewX(string(charbuf))
-// 	page.AppendX(x)
-// 	break
-// }
-
+// This function reads a property of an element with parameters
 func checkElementWiP(line *string, i *int, n int, charbuf *[]byte, EOL *bool, propend *bool) {
 	if string((*line)[(*i)+n]) == Patterns["quotation"] {
 		(*i) += (n+1)
@@ -153,6 +81,7 @@ func checkElementWiP(line *string, i *int, n int, charbuf *[]byte, EOL *bool, pr
 	}
 }
 
+// This function creates new element and adds it to the buffer
 func makeNewElement(parent_buffer *[]*element, txt_buffer *[][]byte, charbuf_id *[]byte, charbuf_class *[]byte, parent *parent, child_buffer *[]*element, charbuf_ref *[]byte) {
 	(*txt_buffer) = append((*txt_buffer), []byte{})
 	new_element := NewElement(string((*charbuf_id)), string((*charbuf_class)), *parent, *child_buffer, string((*charbuf_ref)), "")
@@ -160,6 +89,7 @@ func makeNewElement(parent_buffer *[]*element, txt_buffer *[][]byte, charbuf_id 
 	(*parent_buffer) = append((*parent_buffer), new_element)
 }
 
+// This function reads the ref field of styles and executables
 func fillRef(line *string, i *int) []byte {
 	if (*line)[(*i)+3:(*i)+6] == Patterns["ref"] && string((*line)[(*i)+7]) == Patterns["quotation"] {
 		charbuf := []byte{}
@@ -172,6 +102,29 @@ func fillRef(line *string, i *int) []byte {
 	}
 }
 
+// This function updates tree_buffer
+func editTreeBuffer(parent_buffer *[]*element, tree_buffer *[]*element, txt_buffer *[][]byte, page *page) {
+	if len((*parent_buffer)) == 1 {
+		if len((*txt_buffer)) > 0 {
+			(*parent_buffer)[0].AppendTXT((*txt_buffer)[0])
+			(*txt_buffer) = [][]byte{}
+		}
+		(*parent_buffer)[0].ChangeParent(page)
+		(*tree_buffer) = append((*tree_buffer), (*parent_buffer)[0])
+		(*parent_buffer) = nil
+	} else if len((*parent_buffer)) >= 2 {
+		if len((*txt_buffer)) > 0 {
+			(*parent_buffer)[len((*parent_buffer))-1].AppendTXT((*txt_buffer)[len((*txt_buffer))-1])
+			(*txt_buffer) = (*txt_buffer)[:len((*txt_buffer))-1]
+		}
+		(*parent_buffer)[len((*parent_buffer))-1].ChangeParent((*parent_buffer)[len((*parent_buffer))-2])
+		(*parent_buffer)[len((*parent_buffer))-2].AppendChild((*parent_buffer)[len((*parent_buffer))-1])
+		(*parent_buffer) = (*parent_buffer)[:len((*parent_buffer))-1]
+	}
+}
+
+// This function spawns the POT (Page Object Tree)
+// and returns pointers as well as hashes
 func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError) {
 	ego, err := os.Open(egofile)
 	if err != nil {
@@ -240,27 +193,11 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 					}
 					i += 3
 				}
-				// TODO: rewrite so it makes one function with the last
-				// before page != nil statement
 				if line[i:i+3] == Patterns["elementCLS"] {
 					if len(parent_buffer) == 0 {
 						break
-					} else if len(parent_buffer) == 1 {
-						if len(txt_buffer) > 0 {
-							parent_buffer[0].AppendTXT(txt_buffer[0])
-							txt_buffer = [][]byte{}
-						}
-						parent_buffer[0].ChangeParent(page)
-						tree_buffer = append(tree_buffer, parent_buffer[0])
-						parent_buffer = nil
-					} else if len(parent_buffer) >= 2 {
-						if len(txt_buffer) > 0 {
-							parent_buffer[len(parent_buffer)-1].AppendTXT(txt_buffer[len(txt_buffer)-1])
-							txt_buffer = txt_buffer[:len(txt_buffer)-1]
-						}
-						parent_buffer[len(parent_buffer)-1].ChangeParent(parent_buffer[len(parent_buffer)-2])
-						parent_buffer[len(parent_buffer)-2].AppendChild(parent_buffer[len(parent_buffer)-1])
-						parent_buffer = parent_buffer[:len(parent_buffer)-1]
+					} else {
+						editTreeBuffer(&parent_buffer, &tree_buffer, &txt_buffer, page)
 					}
 					if i >= len(line)-3 {
 						break
@@ -315,23 +252,7 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 		}
 	}
 	for len(parent_buffer) > 0 {
-		if len(parent_buffer) == 1 {
-			if len(txt_buffer) > 0 {
-				parent_buffer[0].AppendTXT(txt_buffer[0])
-				txt_buffer = [][]byte{}
-			}
-			parent_buffer[0].ChangeParent(page)
-			tree_buffer = append(tree_buffer, parent_buffer[0])
-			parent_buffer = nil
-		} else if len(parent_buffer) >= 2 {
-			if len(txt_buffer) > 0 {
-				parent_buffer[len(parent_buffer)-1].AppendTXT(txt_buffer[len(txt_buffer)-1])
-				txt_buffer = txt_buffer[:len(txt_buffer)-1]
-			}
-			parent_buffer[len(parent_buffer)-1].ChangeParent(parent_buffer[len(parent_buffer)-2])
-			parent_buffer[len(parent_buffer)-2].AppendChild(parent_buffer[len(parent_buffer)-1])
-			parent_buffer = parent_buffer[:len(parent_buffer)-1]
-		}
+		editTreeBuffer(&parent_buffer, &tree_buffer, &txt_buffer, page)
 	}
 	if page != nil {
 		return page, tree_buffer, &ObjMap, nil
@@ -340,6 +261,8 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 	return nil, nil, nil, &POTError{TXT: "Page does not exist!"}
 }
 
+// This function prints the structure of POT
+// to the stdout
 func PrintPOT(page parent, tree []*element) {
 	fmt.Println("page        :", string(MakeTree_inJSON(page)))
 	fmt.Println("tree length :", len(tree))
