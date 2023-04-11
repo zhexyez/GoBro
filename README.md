@@ -2,9 +2,21 @@
 ![GoBro](https://user-images.githubusercontent.com/35332515/231014731-3e4afc93-690a-4cbb-b7dd-5cf1f0c0044c.png)
 <h2>A Go browser. Render pages using new format ".ego" and standard ".css".</h2>
 <p>Go is a beautiful programming language, so it deserves a browser written on it. But not <b><i>any</i></b> browser. Especially not the type that runs on <b><i>JavaScript</i></b>.</p>
-<p>This <b>project</b> aims to create an entirely independent system of parsing and displaying documents.</p><br/>
+<p>This <b>project</b> aims to create an entirely independent system of parsing and displaying documents.</p>
 <p>For now, it lacks visuals, but already can create a tree of objects parsed from the file with custom extension "<b>.ego</b>".<br/>
 It may not be the perfect solution for displaying pages at the moment, but it aims to replace it in the future.</p><br/>
+<h3>The stage of the project</h3>
+<ul>
+<li>Parser _________________ 🗸</li>
+<li>IPC ____________________ 🗸</li>
+<li>Hashmaps ____________ 🗸</li>
+<li>sPOT optimization ____ in progress</li>
+<li>Client API _____________ in progress</li>
+<li>Standalone ___________ not started</li>
+<li>GIO UI ________________ not started</li>
+<li>HTTP _________________ not started</li>
+<li>Public test ____________ not started</li>
+</ul>
 <h3>Now to the rules:</h2>
 <p>Modern standard requires high levels of readability, adaptability, functionality, and must provide total freedom for designers and maintainers.</p>
 <p>This is why we try to get rid of the complexity of parsing the DOM, so no <b>div</b><i>s</i>, <b>p</b><i>s</i>, <b>h</b><i>s</i>, and other madness (<i>just joking about madness</i>).</p>
