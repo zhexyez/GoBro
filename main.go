@@ -14,6 +14,9 @@ import (
 )
 
 func Path_Format(path string) string {
+	if string(path[:2]) == "E:" {
+		return path
+	}
 	var slash string = "/"
 	if runtime.GOOS == "windows" {
 		slash = "\\"
@@ -122,6 +125,7 @@ func main() {
 
 	// MUST DO PATH PROPAGATION HERE
 	Path_Parse(os.Args[1])
+	fmt.Println("FILE:", os.Args[1])
 
 	i := time.Now()
 	page, tree, _, spoterr := core.SPOT(os.Args[1])
@@ -137,6 +141,9 @@ func main() {
 	go xcute_man(page.XCUTABLES, &api, chan_comm)
 	<-chan_comm
 	fmt.Println("Program took", time.Since(i).Milliseconds(), "milliseconds")
+	
+	// ADD EVERYTHING ON PREBUILD
 	core.PrintPOT(api.Page, *api.Tree)
 	fmt.Println(core.ObjMap)
+	// fmt.Scanln()
 }
