@@ -18,6 +18,7 @@ func xcute(xcutable *core.Xcutable, api *core.API, chan_completed chan<- bool) {
 	// This function provides an execution of and connection with
 	// xcutables.
 	cmd := exec.Command("go", "run", xcutable.REF)
+	fmt.Println(xcutable.REF)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		panic(err)
@@ -64,8 +65,10 @@ func main() {
 	//fmt.Println(ProcessMemory())   //
 	// // // // // // // // // // // //
 
+	// MUST DO PATH PROPAGATION
+
 	i := time.Now()
-	page, tree, _, spoterr := core.SPOT("E:/GitHub/testgb/testpage.ego")
+	page, tree, _, spoterr := core.SPOT("E:/GoBro/test_project/testpage.ego")
 	if spoterr != nil {
 		fmt.Print(spoterr.Error())
 	}
