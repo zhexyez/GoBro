@@ -29,15 +29,15 @@ func main() {
 	l := capi.Lets{}
 	//l.PrintStructure()
 	//time.Sleep(time.Second * 3)
-	for x:=0; x < 1000000; x++ {
-		l.NewElement("d","","","no way")
-	}
-	for x:=0; x < 1000000; x++ {
-		l.NewElement("way","more","params","inside this text")
-	}
-	for x:=0; x < 1000000; x++ {
-		l.NewElement("tobe","presented","with","really amount of text so the file can be tested on latency and other problems")
-	}
+	// for x:=0; x < 1000000; x++ {
+	// 	l.NewElement("d","","","no way")
+	// }
+	// for x:=0; x < 1000000; x++ {
+	// 	l.NewElement("way","more","params","inside this text")
+	// }
+	// for x:=0; x < 1000000; x++ {
+	// 	l.NewElement("tobe","presented","with","really amount of text so the file can be tested on latency and other problems")
+	// }
 
 	l.ElementsChangeID("garry", "bob")
 }
