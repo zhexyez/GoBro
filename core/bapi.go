@@ -1,12 +1,12 @@
-package main
+package core
 
 import (
 	"fmt"
 )
 
 type API struct {
-	Page *page
-	Tree *[]*element
+	Page *Page
+	Tree *[]*Element
 }
 
 func (api *API) PrintStructure() {

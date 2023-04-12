@@ -5,9 +5,9 @@ package main
 // TO USE IN FUTURE                          //
 // // // // // // // // // // // // // // // //
 
-// import (
-// 	"fmt"
-// )
+import (
+	capi "./capi"
+)
 
 // // Code from here to main() must be in separate file
 // type Lets struct {
@@ -25,19 +25,19 @@ package main
 // 	fmt.Println("0x25\x10"+old_id+"\x10"+new_id)
 // }
 
-// func main() {
-// 	l := Lets{}
-// 	//l.PrintStructure()
-// 	//time.Sleep(time.Second * 3)
-// 	for x:=0; x < 1000000; x++ {
-// 		l.NewElement("d","","","no way")
-// 	}
-// 	for x:=0; x < 1000000; x++ {
-// 		l.NewElement("way","more","params","inside this text")
-// 	}
-// 	for x:=0; x < 1000000; x++ {
-// 		l.NewElement("tobe","presented","with","really amount of text so the file can be tested on latency and other problems")
-// 	}
+func main() {
+	l := capi.Lets{}
+	//l.PrintStructure()
+	//time.Sleep(time.Second * 3)
+	for x:=0; x < 1000000; x++ {
+		l.NewElement("d","","","no way")
+	}
+	for x:=0; x < 1000000; x++ {
+		l.NewElement("way","more","params","inside this text")
+	}
+	for x:=0; x < 1000000; x++ {
+		l.NewElement("tobe","presented","with","really amount of text so the file can be tested on latency and other problems")
+	}
 
-// 	l.ElementsChangeID("garry", "bob")
-// }
+	l.ElementsChangeID("garry", "bob")
+}

@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"bufio"
@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var ObjMap map[string][]*element = make(map[string][]*element)
+var ObjMap map[string][]*Element = make(map[string][]*Element)
 
 var charbuf_id, charbuf_class, charbuf_ref []byte
 
@@ -82,7 +82,7 @@ func checkElementWiP(line *string, i *int, n int, charbuf *[]byte, EOL *bool, pr
 }
 
 // This function creates new element and adds it to the buffer
-func makeNewElement(parent_buffer *[]*element, txt_buffer *[][]byte, charbuf_id *[]byte, charbuf_class *[]byte, parent *parent, child_buffer *[]*element, charbuf_ref *[]byte) {
+func makeNewElement(parent_buffer *[]*Element, txt_buffer *[][]byte, charbuf_id *[]byte, charbuf_class *[]byte, parent *Parent, child_buffer *[]*Element, charbuf_ref *[]byte) {
 	(*txt_buffer) = append((*txt_buffer), []byte{})
 	new_element := NewElement(string((*charbuf_id)), string((*charbuf_class)), *parent, *child_buffer, string((*charbuf_ref)), "")
 	ObjMap[new_element.ID] = append(ObjMap[new_element.ID], new_element)
@@ -103,7 +103,7 @@ func fillRef(line *string, i *int) []byte {
 }
 
 // This function updates tree_buffer
-func editTreeBuffer(parent_buffer *[]*element, tree_buffer *[]*element, txt_buffer *[][]byte, page *page) {
+func editTreeBuffer(parent_buffer *[]*Element, tree_buffer *[]*Element, txt_buffer *[][]byte, page *Page) {
 	if len((*parent_buffer)) == 1 {
 		if len((*txt_buffer)) > 0 {
 			(*parent_buffer)[0].AppendTXT((*txt_buffer)[0])
@@ -125,7 +125,7 @@ func editTreeBuffer(parent_buffer *[]*element, tree_buffer *[]*element, txt_buff
 
 // This function spawns the POT (Page Object Tree)
 // and returns pointers as well as hashes
-func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError) {
+func SPOT(egofile string) (*Page, []*Element, *map[string][]*Element, *POTError) {
 	ego, err := os.Open(egofile)
 	if err != nil {
 		return nil, nil, nil, &POTError{TXT: "Unable to open the file. Possible error:" + err.Error()}
@@ -134,8 +134,8 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 
 	// Create instance of page and intermediate buffers
 	page := NewPage()
-	var parent parent
-	var child_buffer, tree_buffer, parent_buffer []*element
+	var parent Parent
+	var child_buffer, tree_buffer, parent_buffer []*Element
 	var txt_buffer [][]byte
 	var charbuf []byte
 
@@ -263,7 +263,7 @@ func SPOT(egofile string) (*page, []*element, *map[string][]*element, *POTError)
 
 // This function prints the structure of POT
 // to the stdout
-func PrintPOT(page parent, tree []*element) {
+func PrintPOT(page Parent, tree []*Element) {
 	fmt.Println("page        :", string(MakeTree_inJSON(page)))
 	fmt.Println("tree length :", len(tree))
 	for el := range tree {

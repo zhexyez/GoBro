@@ -2,86 +2,27 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
-	"unsafe"
 
-	"golang.org/x/sys/windows"
+	core "./core"
 )
 
-const open string = "../"
+//const open string = "./"
 
-type MEMORYSTATUSEX struct {
-    dwLength                uint32
-    dwMemoryLoad            uint32
-    ullTotalPhys            uint64
-    ullAvailPhys            uint64
-    ullTotalPageFile        uint64
-    ullAvailPageFile        uint64
-    ullTotalVirtual         uint64
-    ullAvailVirtual         uint64
-    ullAvailExtendedVirtual uint64
-}
-
-type PROCESS_MEMORY_COUNTERS struct {
-    cb                         uint32
-    PageFaultCount             uint32
-    PeakWorkingSetSize         uint64
-    WorkingSetSize             uint64
-    QuotaPeakPagedPoolUsage    uint64
-    QuotaPagedPoolUsage        uint64
-    QuotaPeakNonPagedPoolUsage uint64
-    QuotaNonPagedPoolUsage     uint64
-    PagefileUsage              uint64
-    PeakPagefileUsage          uint64
-}
-
-func TotalMemory () uint64 {
-	kernel32 := windows.NewLazySystemDLL("kernel32.dll")
-    globalMemoryStatusEx := kernel32.NewProc("GlobalMemoryStatusEx")
-
-    var memInfo MEMORYSTATUSEX
-    memInfo.dwLength = uint32(unsafe.Sizeof(memInfo))
-
-    ret, _, err := globalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&memInfo)))
-    if ret == 0 {
-        panic(fmt.Sprintf("Call to GlobalMemoryStatusEx failed: %v", err))
-    }
-
-    // fmt.Printf("Total memory: %d GB\n", memInfo.ullTotalPhys / 1073741824)
-	return memInfo.ullTotalPhys
-}
-
-func ProcessMemory() uint64 {
-	kernel32 := syscall.NewLazyDLL("kernel32.dll")
-    psapi := syscall.NewLazyDLL("psapi.dll")
-
-    getCurrentProcess := kernel32.NewProc("GetCurrentProcess")
-    getProcessMemoryInfo := psapi.NewProc("GetProcessMemoryInfo")
-
-    var memCounters PROCESS_MEMORY_COUNTERS
-
-    currentProcess, _, _ := getCurrentProcess.Call()
-    ret, _, err := getProcessMemoryInfo.Call(currentProcess, uintptr(unsafe.Pointer(&memCounters)), uintptr(unsafe.Sizeof(memCounters)))
-    if ret == 0 {
-        panic(fmt.Sprintf("Call to GetProcessMemoryInfo failed: %v", err))
-    }
-
-    //fmt.Printf("Working set size: %d MB\n", memCounters.WorkingSetSize / 1048576)
-	return memCounters.WorkingSetSize
-}
-
-func xcute(xcutable *xcutable, api *API, chan_completed chan<- bool) {
+func xcute(xcutable *core.Xcutable, api *core.API, chan_completed chan<- bool) {
+	var stderr bytes.Buffer
 	// This function provides an execution of and connection with
 	// xcutables.
-	cmd := exec.Command("go", "run", open+xcutable.REF)
+	cmd := exec.Command("go", "run", xcutable.REF)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		panic(err)
 	}
+	cmd.Stderr = &stderr
 	err = cmd.Start()
 	if err != nil {
 		panic(err)
@@ -101,12 +42,14 @@ func xcute(xcutable *xcutable, api *API, chan_completed chan<- bool) {
 	}
 	err = cmd.Wait()
 	if err != nil {
+		fmt.Println(stderr.String())
+		fmt.Println(err)
 		panic(err)
 	}
 	chan_completed <- true
 }
 
-func xcute_man(xcutables []*xcutable, api *API, chan_comm chan<- bool) {
+func xcute_man(xcutables []*core.Xcutable, api *core.API, chan_comm chan<- bool) {
 	for x := range xcutables {
 		chan_completed := make(chan bool)
 		go xcute(xcutables[x], api, chan_completed)
@@ -122,19 +65,19 @@ func main() {
 	// // // // // // // // // // // //
 
 	i := time.Now()
-	page, tree, _, spoterr := SPOT("testpage.ego")
+	page, tree, _, spoterr := core.SPOT("E:/GitHub/testgb/testpage.ego")
 	if spoterr != nil {
 		fmt.Print(spoterr.Error())
 	}
-	api := API{Page: page, Tree: &tree}
+	api := core.API{Page: page, Tree: &tree}
 	fmt.Println("Spawned in", time.Since(i).Nanoseconds(), "nanoseconds")
-
+	core.PrintPOT(api.Page, *api.Tree)
 	//fmt.Println(objmap)
 
 	chan_comm := make(chan bool)
 	go xcute_man(page.XCUTABLES, &api, chan_comm)
 	<-chan_comm
 	fmt.Println("Program took", time.Since(i).Milliseconds(), "milliseconds")
-	PrintPOT(api.Page, *api.Tree)
-	fmt.Println(ObjMap)
+	core.PrintPOT(api.Page, *api.Tree)
+	fmt.Println(core.ObjMap)
 }
