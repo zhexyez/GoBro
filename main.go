@@ -46,15 +46,6 @@ func xcute(xcutable *core.Xcutable, api *core.API, chan_completed chan<- bool) {
 	for scanner.Scan() {
 		params := strings.Split(scanner.Text(), "\x10")
 		calliapi(params, api)
-		// if params[0] == "0x5" {
-		// 	api.PrintStructure()
-		// }
-		// if params[0] == "0x24" {
-		// 	api.NewElement(params[1:])
-		// }
-		// if params[0] == "0x25" {
-		// 	api.ElementsChangeID(params[1:])
-		// }
 	}
 	err = cmd.Wait()
 	if err != nil {

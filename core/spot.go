@@ -209,13 +209,11 @@ func SPOT(egofile string) (*Page, []*Element, *map[string][]*Element, *POTError)
 					continue
 				}
 				if line[i:i+3] == Patterns["elementWiP"] {
-					// something seems not right. can make it more compact
 					if i >= len(line)-3 {
 						break
 					}
 					parent = page
 					i += 3
-					// var charbuf_id, charbuf_class, charbuf_ref []byte
 					var occurencies_check [3]byte = [3]byte{0,0,0}
 					var propend bool = false
 					for !propend {

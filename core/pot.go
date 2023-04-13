@@ -138,14 +138,15 @@ func (e *Element) RemoveInBoundaries(lower int, upper int) {
 	}
 }
 
+// This method is called by the FlushElement method.
+// Its purpose is to go recursively on each
+// child and remove it (assign to nil).
 func (e *Element) element_reset() {
-	// This method is called by the FlushElement method.
-	// Its purpose is to go recursively on each
-	// child and remove it (assign to nil).
 	e.ID = ""
 	e.CLS = ""
 	e.PARENT = nil
 	e.REF = ""
+	e.TXT = ""
 	if len(e.CHILD) == 0 {
 		return
 	}
@@ -164,6 +165,7 @@ func (e *Element) element_reset_keep_children(newParent Parent) {
 	e.CLS = ""
 	e.PARENT = nil
 	e.REF = ""
+	e.TXT = ""
 	if len(e.CHILD) == 0 {
 		return
 	}
@@ -183,6 +185,7 @@ func FlushElement(Element *Element) *Element {
 // This method resets an element and calls
 // garbage collector to remove it from the memory.
 // Also it gives the Element's children new Parent.
+// TODO: top-level to page
 func FlushElementKeepChildren(Element *Element, newParent Parent) *Element {
 	defer runtime.GC()
 	Element.element_reset_keep_children(newParent)
