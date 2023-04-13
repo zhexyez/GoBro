@@ -7,9 +7,11 @@ import (
 	"os"
 )
 
-var ObjMap map[string][]*Element = make(map[string][]*Element)
+// This file contains is the core to create
+// POT (Page Object Tree). TODO: TL;DR
 
-var charbuf_id, charbuf_class, charbuf_ref []byte
+// Hashmap of objects. Gets updated with any change
+var ObjMap map[string][]*Element = make(map[string][]*Element)
 
 var keychars map[byte]string = map[byte]string{
 	60:  "<",
@@ -136,6 +138,7 @@ func SPOT(egofile string) (*Page, []*Element, *map[string][]*Element, *POTError)
 	page := NewPage()
 	var parent Parent
 	var child_buffer, tree_buffer, parent_buffer []*Element
+	var charbuf_id, charbuf_class, charbuf_ref []byte
 	var txt_buffer [][]byte
 	var charbuf []byte
 
