@@ -12,7 +12,7 @@ It may not be the perfect solution for displaying pages at the moment, but it ai
 <li>Hashmaps ____________ 🗸</li>
 <li>sPOT optimization ____ 🗸</li>
 <li>Client API _____________ in progress</li>
-<li>Standalone ___________ not started</li>
+<li>Standalone ___________ in progress</li>
 <li>GIO UI ________________ not started</li>
 <li>HTTP _________________ not started</li>
 <li>Public test ____________ not started</li>
