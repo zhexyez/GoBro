@@ -10,7 +10,7 @@ It may not be the perfect solution for displaying pages at the moment, but it ai
 <li>Parser _________________ 🗸</li>
 <li>IPC ____________________ 🗸</li>
 <li>Hashmaps ____________ 🗸</li>
-<li>sPOT optimization ____ in progress</li>
+<li>sPOT optimization ____ 🗸</li>
 <li>Client API _____________ in progress</li>
 <li>Standalone ___________ not started</li>
 <li>GIO UI ________________ not started</li>
